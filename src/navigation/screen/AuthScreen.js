@@ -11,8 +11,8 @@ import {
 import { supabase } from "../../lib/supabase";
 import { useNavigation } from "@react-navigation/native";
 
-export default function AuthScreen({  }) {
-  const navigation = useNavigation() 
+export default function AuthScreen() {
+  const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,14 +22,15 @@ export default function AuthScreen({  }) {
     async function checkSession() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigation.replace("Tasks"); // navigate if already signed in
+        navigation.replace("TasksScreen", { user: session.user });
       }
     }
     checkSession();
 
+    // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        navigation.replace("Tasks"); // navigate after login/signup
+        navigation.replace("TasksScreen", { user: session.user });
       }
     });
 
@@ -44,12 +45,22 @@ export default function AuthScreen({  }) {
     setLoading(true);
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    console.log("hkjbjksjkbjj",data);
+    
     setLoading(false);
 
     if (error) {
-      Alert.alert("Sign In Error", error.message);
+      if (error.message.includes("email not confirmed")) {
+        Alert.alert(
+          "Email not confirmed",
+          "Please check your email and confirm your account before signing in."
+        );
+      } else {
+        Alert.alert("Sign In Error", error.message);
+      }
     } else {
-      navigation.replace("TasksScreen"); // navigate after successful login
+      // Successful login, user is in data.user
+      navigation.replace("TasksScreen", { user: data.user });
     }
   }
 
@@ -66,8 +77,11 @@ export default function AuthScreen({  }) {
     if (error) {
       Alert.alert("Sign Up Error", error.message);
     } else {
-      Alert.alert("Sign Up Successful", "You are now logged in.");
-      navigation.replace("TasksScreen"); // navigate after successful signup
+      Alert.alert(
+        "Sign Up Successful",
+        "Check your email to confirm your account before logging in."
+      );
+      // After signup, don't auto-navigate; wait for email confirmation
     }
   }
 
