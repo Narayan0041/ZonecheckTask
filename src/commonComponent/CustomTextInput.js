@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 
-export default function CustomTextInput({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType = "default" }) {
+export default function CustomeTextInput({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType = "default" }) {
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}

@@ -1,63 +1,112 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { supabase } from "./lib/supabase";
-import TasksScreen from "./TasksScreen";
-import CustomTextInput from "./components/CustomTextInput"; // import the reusable input
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  TextInput, 
+  Alert, 
+  ActivityIndicator 
+} from "react-native";
+import { supabase } from "../../lib/supabase";
+import { useNavigation } from "@react-navigation/native";
 
-export default function AuthScreen() {
-  const [session, setSession] = useState(null);
+export default function AuthScreen({  }) {
+  const navigation = useNavigation() 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    // Check existing session on app load
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigation.replace("Tasks"); // navigate if already signed in
+      }
+    }
+    checkSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        navigation.replace("Tasks"); // navigate after login/signup
+      }
+    });
+
     return () => authListener.subscription.unsubscribe();
   }, []);
 
   async function signIn() {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) alert(error.message);
+    if (!email || !password) {
+      Alert.alert("Please enter email and password");
+      return;
+    }
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert("Sign In Error", error.message);
+    } else {
+      navigation.replace("TasksScreen"); // navigate after successful login
+    }
   }
 
   async function signUp() {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) alert(error.message);
+    if (!email || !password) {
+      Alert.alert("Please enter email and password");
+      return;
+    }
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert("Sign Up Error", error.message);
+    } else {
+      Alert.alert("Sign Up Successful", "You are now logged in.");
+      navigation.replace("TasksScreen"); // navigate after successful signup
+    }
   }
 
-  if (!session) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Welcome</Text>
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Welcome</Text>
 
-        <CustomTextInput
-          label="Email"
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Email</Text>
+        <TextInput
           value={email}
           onChangeText={setEmail}
           placeholder="Enter your email"
           keyboardType="email-address"
+          autoCapitalize="none"
+          style={styles.input}
         />
 
-        <CustomTextInput
-          label="Password"
+        <Text style={styles.label}>Password</Text>
+        <TextInput
           value={password}
           onChangeText={setPassword}
           placeholder="Enter your password"
           secureTextEntry
+          style={styles.input}
         />
-
-        <TouchableOpacity style={styles.button} onPress={signIn}>
-          <Text style={styles.buttonText}>Sign In</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.button, styles.signupButton]} onPress={signUp}>
-          <Text style={styles.buttonText}>Sign Up</Text>
-        </TouchableOpacity>
       </View>
-    );
-  }
 
-  return <TasksScreen />;
+      {loading && <ActivityIndicator size="large" color="#4a90e2" style={{ marginBottom: 20 }} />}
+
+      <TouchableOpacity style={styles.button} onPress={signIn}>
+        <Text style={styles.buttonText}>Sign In</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.button, styles.signupButton]} onPress={signUp}>
+        <Text style={styles.buttonText}>Sign Up</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -73,6 +122,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 40,
     color: "#333",
+  },
+  inputContainer: {
+    marginBottom: 30,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 5,
+    color: "#333",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: "#fff",
   },
   button: {
     backgroundColor: "#4a90e2",

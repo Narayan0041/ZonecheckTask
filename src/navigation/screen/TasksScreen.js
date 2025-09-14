@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, TextInput, Button, FlatList, Text } from "react-native";
-import { supabase } from "./lib/supabase";
+import { View, TextInput, Button, FlatList, Text, Alert } from "react-native";
+import  {supabase}  from "../../lib/supabase";
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState([]);
@@ -22,7 +22,7 @@ export default function TasksScreen() {
 
   async function addTask() {
     const { data, error } = await supabase.from("tasks").insert([{ task_title: newTask }]);
-    if (error) alert(error.message);
+    if (error) Alert.alert(error.message);
     else {
       setNewTask("");
       fetchTasks();
@@ -30,14 +30,16 @@ export default function TasksScreen() {
   }
 
   async function toggleTask(id, completed) {
+    console.log("gettinf tahe task",id ,completed);
+    
     const { error } = await supabase.from("tasks").update({ completed: !completed }).eq("id", id);
-    if (error) alert(error.message);
+    if (error) Alert.alert(error.message);
     else fetchTasks();
   }
 
   async function deleteTask(id) {
     const { error } = await supabase.from("tasks").delete().eq("id", id);
-    if (error) alert(error.message);
+    if (error) Alert.alert(error.message);
     else fetchTasks();
   }
 

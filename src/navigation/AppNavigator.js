@@ -17,7 +17,7 @@ export default function AppNavigator() {
           options={{ headerShown: false }} 
         />
         <Stack.Screen 
-          name="ScreenOne" 
+          name="TasksScreen" 
           component={TasksScreen} 
           options={{ title: 'Tasks' }} 
         />
